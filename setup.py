@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='sseclient',
-    version='0.0.2',
+    version='0.0.3',
     author='Brent Tubbs',
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
