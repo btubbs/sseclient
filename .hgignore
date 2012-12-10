@@ -1,0 +1,9 @@
+syntax: glob
+*pyc
+*swp
+env/*
+._*
+*egg-info*
+tmp/*
+.tox/*
+__pycache__/*
