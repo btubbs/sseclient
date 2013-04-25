@@ -30,7 +30,7 @@ class SSEClient(object):
     def _connect(self):
         if self.last_id:
             self.requests_kwargs['headers']['Last-Event-ID'] = self.last_id
-        self.resp = requests.get(self.url, prefetch=False,
+        self.resp = requests.get(self.url, stream=True,
                                  **self.requests_kwargs)
 
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
