@@ -1,3 +1,4 @@
+import six
 from mock import patch
 
 import sseclient
@@ -60,7 +61,7 @@ class FakeRequests(object):
 class FakeResponse(object):
     def __init__(self, status_code, content):
         self.status_code = status_code
-        if not isinstance(content, unicode):
+        if not isinstance(content, six.text_type):
             content = content.decode('utf8')
         self.stream = content
 
