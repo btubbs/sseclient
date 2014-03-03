@@ -43,7 +43,7 @@ class SSEClient(object):
         while True:
             yield self.next()
 
-    def next(self):
+    def __next__(self):
         # TODO: additionally support CR and CRLF-style newlines.
         while '\n\n' not in self.buf:
             try:
@@ -73,6 +73,9 @@ class SSEClient(object):
             self.last_id = msg.id
 
         return msg
+
+    if six.PY2:
+        next = __next__
 
 
 class Event(object):
