@@ -1,7 +1,8 @@
 import re
 import time
 import warnings
-import httplib
+
+import six
 
 import requests
 
@@ -48,7 +49,7 @@ class SSEClient(object):
             try:
                 nextchar = next(self.resp.iter_content(decode_unicode=True))
                 self.buf += nextchar
-            except (StopIteration, httplib.IncompleteRead):
+            except (StopIteration, six.moves.http_client.IncompleteRead):
                 time.sleep(self.retry / 1000.0)
                 self._connect()
 
