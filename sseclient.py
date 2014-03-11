@@ -40,8 +40,7 @@ class SSEClient(object):
         self.resp.raise_for_status()
 
     def __iter__(self):
-        while True:
-            yield self.next()
+        return self
 
     def __next__(self):
         # TODO: additionally support CR and CRLF-style newlines.
