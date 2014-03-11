@@ -10,7 +10,7 @@ setup(
     author='Brent Tubbs',
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
-    install_requires=['requests>=1.2.0', 'six'],
+    install_requires=['requests>=2.0.0', 'six'],
     tests_require=['pytest', 'mock'],
     setup_requires=[] + pytest_runner,
     description=(

@@ -48,7 +48,7 @@ class SSEClient(object):
             try:
                 nextchar = next(self.resp.iter_content(decode_unicode=True))
                 self.buf += nextchar
-            except (StopIteration, six.moves.http_client.IncompleteRead):
+            except (StopIteration, requests.RequestsException):
                 time.sleep(self.retry / 1000.0)
                 self._connect()
 
