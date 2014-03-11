@@ -108,32 +108,31 @@ def test_retry_remembered():
         assert m2.retry is None
         assert c.retry == 5000
 
+content = join_events(
+    E(data='message 1', id='first', retry='2000', event='blah'),
+    E(data='message 2', id='second', retry='4000', event='blerg'),
+    E(data='message 3\nhas two lines', id='third'),
+)
+multiple_messages = patch('sseclient.requests', FakeRequests(200, content))
 
+@multiple_messages
 def test_multiple_messages():
+    c = sseclient.SSEClient('http://blah.com')
+    m1 = next(c)
+    m2 = next(c)
+    m3 = next(c)
 
-    content = join_events(
-        E(data='message 1', id='first', retry='2000', event='blah'),
-        E(data='message 2', id='second', retry='4000', event='blerg'),
-        E(data='message 3\nhas two lines', id='third'),
-    )
+    assert m1.data == u'message 1'
+    assert m1.id == u'first'
+    assert m1.retry == 2000
+    assert m1.event == u'blah'
 
-    with patch('sseclient.requests', FakeRequests(200, content)):
-        c = sseclient.SSEClient('http://blah.com')
-        m1 = next(c)
-        m2 = next(c)
-        m3 = next(c)
+    assert m2.data == u'message 2'
+    assert m2.id == u'second'
+    assert m2.retry == 4000
+    assert m2.event == u'blerg'
 
-        assert m1.data == u'message 1'
-        assert m1.id == u'first'
-        assert m1.retry == 2000
-        assert m1.event == u'blah'
+    assert m3.data == u'message 3\nhas two lines'
 
-        assert m2.data == u'message 2'
-        assert m2.id == u'second'
-        assert m2.retry == 4000
-        assert m2.event == u'blerg'
-
-        assert m3.data == u'message 3\nhas two lines'
-
-        assert c.retry == m2.retry
-        assert c.last_id == m3.id
+    assert c.retry == m2.retry
+    assert c.last_id == m3.id
