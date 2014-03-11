@@ -1,3 +1,5 @@
+import itertools
+
 import six
 from mock import patch
 
@@ -136,3 +138,8 @@ def test_multiple_messages():
 
     assert c.retry == m2.retry
     assert c.last_id == m3.id
+
+@multiple_messages
+def test_simple_iteration():
+    c = sseclient.SSEClient('http://blah.com')
+    m1, m2, m3 = itertools.islice(c, 3)
