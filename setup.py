@@ -6,7 +6,7 @@ pytest_runner = ['pytest-runner'] if 'ptr' in sys.argv else []
 
 setup(
     name='sseclient',
-    version='0.0.7',
+    version='0.0.8',
     author='Brent Tubbs',
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
