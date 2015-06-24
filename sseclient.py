@@ -8,10 +8,13 @@ import requests
 
 
 class SSEClient(object):
-    def __init__(self, url, last_id=None, retry=3000, **kwargs):
+    def __init__(self, url, last_id=None, retry=3000, session=None, **kwargs):
         self.url = url
         self.last_id = last_id
         self.retry = retry
+
+        # Optional support for passing in a requests.Session()
+        self.session = session
 
         # Any extra kwargs will be fed into the requests.get call later.
         self.requests_kwargs = kwargs
@@ -32,8 +35,10 @@ class SSEClient(object):
     def _connect(self):
         if self.last_id:
             self.requests_kwargs['headers']['Last-Event-ID'] = self.last_id
-        self.resp = requests.get(self.url, stream=True,
-                                 **self.requests_kwargs)
+
+        # Use session if set.  Otherwise fall back to requests module.
+        requester = self.session or requests
+        self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
 
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
         # attribute on Events like the Javascript spec requires.

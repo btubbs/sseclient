@@ -1,7 +1,9 @@
 import itertools
 
+import requests
 import six
 from mock import patch
+from requests.cookies import RequestsCookieJar
 
 import sseclient
 from sseclient import Event as E
@@ -61,11 +63,12 @@ class FakeRequests(object):
 
 
 class FakeResponse(object):
-    def __init__(self, status_code, content):
+    def __init__(self, status_code, content, headers=None):
         self.status_code = status_code
         if not isinstance(content, six.text_type):
             content = content.decode('utf8')
         self.stream = content
+        self.headers = headers or None
 
     def iter_content(self, chunk_size=1, *args, **kwargs):
         try:
@@ -117,6 +120,7 @@ content = join_events(
 )
 multiple_messages = patch('sseclient.requests', FakeRequests(200, content))
 
+
 @multiple_messages
 def test_multiple_messages():
     c = sseclient.SSEClient('http://blah.com')
@@ -139,7 +143,18 @@ def test_multiple_messages():
     assert c.retry == m2.retry
     assert c.last_id == m3.id
 
+
 @multiple_messages
 def test_simple_iteration():
     c = sseclient.SSEClient('http://blah.com')
     m1, m2, m3 = itertools.islice(c, 3)
+
+
+def test_client_sends_cookies():
+    s = requests.Session()
+    s.cookies = RequestsCookieJar()
+    s.cookies['foo'] = 'bar'
+    with patch('sseclient.requests.Session.send') as m:
+        sseclient.SSEClient('http://blah.com', session=s)
+        prepared_request = m.call_args[0][0]
+        assert prepared_request.headers['Cookie'] == 'foo=bar'
