@@ -16,5 +16,5 @@ setup(
     description=(
         'Python client library for reading Server Sent Event streams.'),
     long_description=open('README.rst').read(),
-    url='http://bits.btubbs.com/sseclient',
+    url='https://bitbucket.org/btubbs/sseclient/',
 )
