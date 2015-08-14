@@ -65,7 +65,10 @@ class SSEClient(object):
                 self.buf = head + sep
                 continue
 
-        head, sep, tail = self.buf.partition('\n')
+        split = re.split(r'\r\n\r\n|\n\n', self.buf)
+        head = split[0]
+        tail = "".join(split[1:])
+
         self.buf = tail
         msg = Event.parse(head)
 
