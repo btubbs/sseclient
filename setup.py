@@ -12,7 +12,7 @@ setup(
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
     install_requires=['requests>=2.0.0', 'six'],
-    tests_require=['pytest', 'mock'],
+    tests_require=['pytest', 'backports.unittest_mock'],
     setup_requires=[] + pytest_runner,
     description=(
         'Python client library for reading Server Sent Event streams.'),

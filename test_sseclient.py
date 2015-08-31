@@ -1,8 +1,8 @@
 import itertools
+from unittest.mock import patch
 
 import requests
 import six
-from mock import patch
 from requests.cookies import RequestsCookieJar
 
 import sseclient
