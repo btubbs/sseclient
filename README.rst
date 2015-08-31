@@ -18,7 +18,7 @@ Usage
 -----
 
 ::
-    
+
     from sseclient import SSEClient
 
     messages = SSEClient('http://mysite.com/sse_stream/')
@@ -44,20 +44,18 @@ for 'auth'.
 Development
 -----------
 
-Install the test dependencies::
+Simply run the tests with::
 
-    pip install pytest mock
+    $ python setup.py test
+    =================== test session starts ====================
+    platform darwin -- Python 3.4.3 -- py-1.4.30 -- pytest-2.7.2
+    rootdir: /Users/jaraco/Dropbox/code/public/sseclient, inifile:
+    plugins: backports.unittest-mock
+    collected 11 items
 
-And run the tests::
+    test_sseclient.py ...........
 
-    $ py.test
-    ================== test session starts ===================
-    platform linux2 -- Python 2.7.3 -- pytest-2.3.4
-    collected 9 items 
-
-    test_sseclient.py .........
-
-    ================ 9 passed in 0.31 seconds ================
+    ================ 11 passed in 0.12 seconds =================
 
 There are a couple TODO items in the code for getting the implementation
 completely in line with the finer points of the SSE spec.
