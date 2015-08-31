@@ -2,7 +2,8 @@
 import sys
 from setuptools import setup
 
-pytest_runner = ['pytest-runner'] if 'ptr' in sys.argv else []
+needs_pytest = {'pytest', 'test'}.intersection(sys.argv)
+pytest_runner = ['pytest_runner>=2.1'] if needs_pytest else []
 
 setup(
     name='sseclient',
