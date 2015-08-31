@@ -1,6 +1,7 @@
 import itertools
 from unittest.mock import patch
 
+import pytest
 import requests
 import six
 from requests.cookies import RequestsCookieJar
@@ -91,38 +92,42 @@ def join_events(*events):
 
 
 # Tests of parsing a multi event stream
-def test_last_id_remembered():
+def test_last_id_remembered(monkeypatch):
     content = "data: message 1\nid: abcdef\n\ndata: message 2\n\n"
-    with patch('sseclient.requests', FakeRequests(200, content)):
-        c = sseclient.SSEClient('http://blah.com')
-        m1 = next(c)
-        m2 = next(c)
+    monkeypatch.setattr('sseclient.requests', FakeRequests(200, content))
 
-        assert m1.id == u'abcdef'
-        assert m2.id is None
-        assert c.last_id == u'abcdef'
+    c = sseclient.SSEClient('http://blah.com')
+    m1 = next(c)
+    m2 = next(c)
+
+    assert m1.id == u'abcdef'
+    assert m2.id is None
+    assert c.last_id == u'abcdef'
 
 
-def test_retry_remembered():
+def test_retry_remembered(monkeypatch):
     content = "data: message 1\nretry: 5000\n\ndata: message 2\n\n"
-    with patch('sseclient.requests', FakeRequests(200, content)):
-        c = sseclient.SSEClient('http://blah.com')
-        m1 = next(c)
-        m2 = next(c)
-        assert m1.retry == 5000
-        assert m2.retry is None
-        assert c.retry == 5000
+    monkeypatch.setattr('sseclient.requests', FakeRequests(200, content))
 
-content = join_events(
-    E(data='message 1', id='first', retry='2000', event='blah'),
-    E(data='message 2', id='second', retry='4000', event='blerg'),
-    E(data='message 3\nhas two lines', id='third'),
-)
-multiple_messages = patch('sseclient.requests', FakeRequests(200, content))
+    c = sseclient.SSEClient('http://blah.com')
+    m1 = next(c)
+    m2 = next(c)
+    assert m1.retry == 5000
+    assert m2.retry is None
+    assert c.retry == 5000
 
 
-@multiple_messages
-def test_multiple_messages():
+@pytest.fixture
+def multiple_responses(monkeypatch):
+    content = join_events(
+        E(data='message 1', id='first', retry='2000', event='blah'),
+        E(data='message 2', id='second', retry='4000', event='blerg'),
+        E(data='message 3\nhas two lines', id='third'),
+    )
+    monkeypatch.setattr('sseclient.requests', FakeRequests(200, content))
+
+
+def test_multiple_messages(multiple_responses):
     c = sseclient.SSEClient('http://blah.com')
     m1 = next(c)
     m2 = next(c)
@@ -144,8 +149,7 @@ def test_multiple_messages():
     assert c.last_id == m3.id
 
 
-@multiple_messages
-def test_simple_iteration():
+def test_simple_iteration(multiple_responses):
     c = sseclient.SSEClient('http://blah.com')
     m1, m2, m3 = itertools.islice(c, 3)
 
