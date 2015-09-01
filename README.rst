@@ -44,18 +44,26 @@ for 'auth'.
 Development
 -----------
 
-Simply run the tests with::
+Install the library in editable mode::
 
-    $ python setup.py test
-    =================== test session starts ====================
-    platform darwin -- Python 3.4.3 -- py-1.4.30 -- pytest-2.7.2
-    rootdir: /Users/jaraco/Dropbox/code/public/sseclient, inifile:
+    pip install -e .
+
+Install the test dependencies::
+
+    pip install pytest backports.unittest_mock
+
+Run the tests with py.test::
+
+    (sseclient)vagrant sseclient $ py.test
+    ===================== test session starts ======================
+    platform linux2 -- Python 2.7.6 -- py-1.4.30 -- pytest-2.7.2
+    rootdir: /vagrant/code/sseclient, inifile: 
     plugins: backports.unittest-mock
-    collected 11 items
+    collected 11 items 
 
     test_sseclient.py ...........
 
-    ================ 11 passed in 0.12 seconds =================
+    ================== 11 passed in 0.19 seconds ===================
 
 There are a couple TODO items in the code for getting the implementation
 completely in line with the finer points of the SSE spec.
