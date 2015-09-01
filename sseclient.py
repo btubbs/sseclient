@@ -7,6 +7,10 @@ import six
 import requests
 
 
+# Technically, we should support streams that mix line endings.  This regex,
+# however, assumes that a system will provide consistent line endings.
+end_of_field = re.compile(r'\r\n\r\n|\r\r|\n\n')
+
 class SSEClient(object):
     def __init__(self, url, last_id=None, retry=3000, session=None, **kwargs):
         self.url = url
@@ -43,9 +47,9 @@ class SSEClient(object):
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
         # attribute on Events like the Javascript spec requires.
         self.resp.raise_for_status()
-        
+
     def _event_complete(self):
-        return '\r\n\r\n' in self.buf or '\n\n' in self.buf
+        return re.search(end_of_field, self.buf) is not None
 
     def __iter__(self):
         return self
@@ -65,7 +69,7 @@ class SSEClient(object):
                 self.buf = head + sep
                 continue
 
-        split = re.split(r'\r\n\r\n|\n\n', self.buf)
+        split = re.split(end_of_field, self.buf)
         head = split[0]
         tail = "".join(split[1:])
 
