@@ -55,9 +55,10 @@ class SSEClient(object):
         return self
 
     def __next__(self):
+        iterator = self.resp.iter_content(decode_unicode=True)
         while not self._event_complete():
             try:
-                nextchar = next(self.resp.iter_content(decode_unicode=True))
+                nextchar = next(iterator)
                 self.buf += nextchar
             except (StopIteration, requests.RequestException):
                 time.sleep(self.retry / 1000.0)
