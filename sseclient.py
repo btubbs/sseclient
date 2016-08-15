@@ -43,7 +43,7 @@ class SSEClient(object):
         # Use session if set.  Otherwise fall back to requests module.
         requester = self.session or requests
         self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
-        self.resp_iterator = self.resp.iter_content(decode_unicode=True)
+        self.resp_file = self.resp.raw
 
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
         # attribute on Events like the Javascript spec requires.
@@ -58,9 +58,11 @@ class SSEClient(object):
     def __next__(self):
         while not self._event_complete():
             try:
-                nextchar = next(self.resp_iterator)
-                self.buf += nextchar
-            except (StopIteration, requests.RequestException):
+                nextline = self.resp_file.readline()
+                if not nextline:
+                    raise EOFError()
+                self.buf += nextline
+            except (StopIteration, requests.RequestException, EOFError) as e:
                 time.sleep(self.retry / 1000.0)
                 self._connect()
 
