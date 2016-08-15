@@ -59,8 +59,10 @@ class SSEClient(object):
         while not self._event_complete():
             try:
                 nextline = self.resp_file.readline()
+                if not nextline:
+                    raise EOFError()
                 self.buf += nextline
-            except (StopIteration, requests.RequestException, Exception):
+            except (StopIteration, requests.RequestException, EOFError) as e:
                 time.sleep(self.retry / 1000.0)
                 self._connect()
 
