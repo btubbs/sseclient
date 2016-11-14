@@ -7,7 +7,7 @@ pytest_runner = ['pytest_runner>=2.1'] if needs_pytest else []
 
 setup(
     name='sseclient',
-    version='0.0.12',
+    version='0.0.13',
     author='Brent Tubbs',
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
