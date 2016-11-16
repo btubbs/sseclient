@@ -1,5 +1,6 @@
 import itertools
-from unittest.mock import patch
+import io
+from unittest import mock
 
 import pytest
 import requests
@@ -53,31 +54,15 @@ def test_default_event():
     assert m.event == 'message'
 
 
-# A couple mocks for Requests
-class FakeRequests(object):
-    def __init__(self, status_code, content):
-        self.status_code = status_code
-        self.content = content
-
-    def get(self, url, *args, **kwargs):
-        return FakeResponse(self.status_code, self.content)
-
-
 class FakeResponse(object):
     def __init__(self, status_code, content, headers=None):
         self.status_code = status_code
+        self.encoding = "utf-8"
         if not isinstance(content, six.text_type):
-            content = content.decode('utf8')
+            content = content.decode("utf-8")
         self.stream = content
         self.headers = headers or None
-
-    def iter_content(self, chunk_size=1, *args, **kwargs):
-        try:
-            c = self.stream[0]
-            self.stream = self.stream[1:]
-            yield c
-        except IndexError:
-            raise StopIteration
+        self.raw = io.BytesIO(content.encode())
 
     def raise_for_status(self):
         pass
@@ -88,13 +73,14 @@ def join_events(*events):
     Given a bunch of Event objects, dump them all to strings and join them
     together.
     """
-    return ''.join(e.dump() for e in events)
+    return u''.join(e.dump() for e in events)
 
 
 # Tests of parsing a multi event stream
 def test_last_id_remembered(monkeypatch):
-    content = "data: message 1\nid: abcdef\n\ndata: message 2\n\n"
-    monkeypatch.setattr('sseclient.requests', FakeRequests(200, content))
+    content = u"data: message 1\nid: abcdef\n\ndata: message 2\n\n"
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
 
     c = sseclient.SSEClient('http://blah.com')
     m1 = next(c)
@@ -106,8 +92,9 @@ def test_last_id_remembered(monkeypatch):
 
 
 def test_retry_remembered(monkeypatch):
-    content = "data: message 1\nretry: 5000\n\ndata: message 2\n\n"
-    monkeypatch.setattr('sseclient.requests', FakeRequests(200, content))
+    content = u"data: message 1\nretry: 5000\n\ndata: message 2\n\n"
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
 
     c = sseclient.SSEClient('http://blah.com')
     m1 = next(c)
@@ -120,19 +107,22 @@ def test_retry_remembered(monkeypatch):
 @pytest.fixture
 def multiple_responses(monkeypatch):
     content = join_events(
-        E(data='message 1', id='first', retry='2000', event='blah'),
-        E(data='message 2', id='second', retry='4000', event='blerg'),
-        E(data='message 3\nhas two lines', id='third'),
+        E(data=u'message 1', id=u'first', retry=u'2000', event=u'blah'),
+        E(data=u'message 2', id=u'second', retry=u'4000', event=u'blerg'),
+        E(data=u'message 3\nhas two lines', id=u'third'),
     )
-    monkeypatch.setattr('sseclient.requests', FakeRequests(200, content))
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    yield
+
+    fake_get.assert_called_once_with(
+        'http://blah.com',
+        headers={'Accept': 'text/event-stream', 'Cache-Control': 'no-cache'},
+        stream=True)
 
 
-def test_multiple_messages(multiple_responses):
-    c = sseclient.SSEClient('http://blah.com')
-    m1 = next(c)
-    m2 = next(c)
-    m3 = next(c)
-
+def assert_multiple_messages(m1, m2, m3):
     assert m1.data == u'message 1'
     assert m1.id == u'first'
     assert m1.retry == 2000
@@ -145,20 +135,33 @@ def test_multiple_messages(multiple_responses):
 
     assert m3.data == u'message 3\nhas two lines'
 
+
+@pytest.mark.usefixtures("multiple_responses")
+def test_multiple_messages():
+    c = sseclient.SSEClient('http://blah.com')
+    m1 = next(c)
+    m2 = next(c)
+    m3 = next(c)
+
+    assert_multiple_messages(m1, m2, m3)
+
     assert c.retry == m2.retry
     assert c.last_id == m3.id
 
 
-def test_simple_iteration(multiple_responses):
+@pytest.mark.usefixtures("multiple_responses")
+def test_simple_iteration():
     c = sseclient.SSEClient('http://blah.com')
     m1, m2, m3 = itertools.islice(c, 3)
+
+    assert_multiple_messages(m1, m2, m3)
 
 
 def test_client_sends_cookies():
     s = requests.Session()
     s.cookies = RequestsCookieJar()
     s.cookies['foo'] = 'bar'
-    with patch('sseclient.requests.Session.send') as m:
+    with mock.patch('sseclient.requests.Session.send') as m:
         sseclient.SSEClient('http://blah.com', session=s)
         prepared_request = m.call_args[0][0]
         assert prepared_request.headers['Cookie'] == 'foo=bar'
