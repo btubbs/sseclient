@@ -1,3 +1,4 @@
+import codecs
 import re
 import time
 import warnings
@@ -56,12 +57,14 @@ class SSEClient(object):
         return self
 
     def __next__(self):
+        decoder = codecs.getincrementaldecoder(
+            self.resp.encoding)(errors='replace')
         while not self._event_complete():
             try:
                 nextline = self.resp_file.readline()
                 if not nextline:
                     raise EOFError()
-                self.buf += nextline
+                self.buf += decoder.decode(nextline)
             except (StopIteration, requests.RequestException, EOFError) as e:
                 time.sleep(self.retry / 1000.0)
                 self._connect()
