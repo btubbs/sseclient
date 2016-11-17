@@ -6,6 +6,7 @@ python:
   - 3.5
 install:
   - pip install .
+  - pip uninstall pytest
   - pip install pytest>=3.0.4
 script:
     py.test
