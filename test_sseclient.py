@@ -57,6 +57,13 @@ def test_default_event():
     assert m.event == 'message'
 
 
+def test_eols():
+    for eol in ('\r\n', '\r', '\n'):
+        m = E.parse('event: hello%sdata: eol%s' % (eol, eol))
+        assert m.event == 'hello'
+        assert m.data == 'eol'
+
+
 class FakeResponse(object):
     def __init__(self, status_code, content, headers=None):
         self.status_code = status_code
