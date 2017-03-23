@@ -136,11 +136,11 @@ class Event(object):
                 warnings.warn('Invalid SSE line: "%s"' % line, SyntaxWarning)
                 continue
 
-            name = m.groupdict()['name']
-            value = m.groupdict()['value']
+            name = m.group('name')
             if name == '':
                 # line began with a ":", so is a comment.  Ignore
                 continue
+            value = m.group('value')
 
             if name == 'data':
                 # If we already have some data, then join to it with a newline.
