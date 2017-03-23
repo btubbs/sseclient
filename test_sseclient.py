@@ -77,6 +77,8 @@ class FakeResponse(object):
     def raise_for_status(self):
         pass
 
+    def iter_content(self, chunk_size=1024):
+        return self.raw
 
 def join_events(*events):
     """

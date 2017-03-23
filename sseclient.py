@@ -13,10 +13,11 @@ import requests
 end_of_field = re.compile(r'\r\n\r\n|\r\r|\n\n')
 
 class SSEClient(object):
-    def __init__(self, url, last_id=None, retry=3000, session=None, **kwargs):
+    def __init__(self, url, last_id=None, retry=3000, session=None, chunk_size=1024, **kwargs):
         self.url = url
         self.last_id = last_id
         self.retry = retry
+        self.chunk_size = chunk_size
 
         # Optional support for passing in a requests.Session()
         self.session = session
@@ -44,7 +45,7 @@ class SSEClient(object):
         # Use session if set.  Otherwise fall back to requests module.
         requester = self.session or requests
         self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
-        self.resp_file = self.resp.raw
+        self.resp_iterator = self.resp.iter_content(chunk_size=self.chunk_size)
 
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
         # attribute on Events like the Javascript spec requires.
@@ -61,10 +62,10 @@ class SSEClient(object):
             self.resp.encoding)(errors='replace')
         while not self._event_complete():
             try:
-                nextline = self.resp_file.readline()
-                if not nextline:
+                next_chunk = self.resp_iterator.next()
+                if not next_chunk:
                     raise EOFError()
-                self.buf += decoder.decode(nextline)
+                self.buf += decoder.decode(next_chunk)
             except (StopIteration, requests.RequestException, EOFError) as e:
                 time.sleep(self.retry / 1000.0)
                 self._connect()
