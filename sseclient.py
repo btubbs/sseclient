@@ -62,7 +62,7 @@ class SSEClient(object):
             self.resp.encoding)(errors='replace')
         while not self._event_complete():
             try:
-                next_chunk = self.resp_iterator.next()
+                next_chunk = next(self.resp_iterator)
                 if not next_chunk:
                     raise EOFError()
                 self.buf += decoder.decode(next_chunk)
