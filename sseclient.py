@@ -66,6 +66,7 @@ class SSEClient(object):
                 if not next_chunk:
                     raise EOFError()
                 self.buf += decoder.decode(next_chunk)
+
             except (StopIteration, requests.RequestException, EOFError) as e:
                 time.sleep(self.retry / 1000.0)
                 self._connect()
@@ -76,12 +77,11 @@ class SSEClient(object):
                 self.buf = head + sep
                 continue
 
-        split = re.split(end_of_field, self.buf)
-        head = split[0]
-        tail = "".join(split[1:])
-
-        self.buf = tail
-        msg = Event.parse(head)
+        # Split the complete event (up to the end_of_field) into event_string,
+        # and retain anything after the current complete event in self.buf
+        # for next time.
+        (event_string, self.buf) = re.split(end_of_field, self.buf, maxsplit=1)
+        msg = Event.parse(event_string)
 
         # If the server requests a specific retry delay, we need to honor it.
         if msg.retry:

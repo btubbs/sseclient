@@ -73,10 +73,8 @@ class FakeResponse(object):
         self.stream = content
         self.headers = headers or None
         self.raw = io.BytesIO(content.encode())
-
     def raise_for_status(self):
         pass
-
     def iter_content(self, chunk_size=1024):
         return self.raw
 
@@ -114,6 +112,39 @@ def test_retry_remembered(monkeypatch):
     assert m1.retry == 5000
     assert m2.retry is None
     assert c.retry == 5000
+
+
+def test_extra_newlines_after_event(monkeypatch):
+    """
+    This makes sure that extra newlines after an event don't
+    cause the event parser to break as it did in
+    https://github.com/btubbs/sseclient/issues/5.
+    """
+    content = u"""event: hello
+data: hello1
+
+
+event: hello
+data: hello2
+
+event: hello
+data: hello3
+
+"""
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    c = sseclient.SSEClient('http://blah.com')
+    m1 = next(c)
+    m2 = next(c)
+    m3 = next(c)
+
+    assert m1.event == u'hello'
+    assert m1.data == u'hello1'
+    assert m2.data == u'hello2'
+    assert m2.event == u'hello'
+    assert m3.data == u'hello3'
+    assert m3.event == u'hello'
 
 
 @pytest.fixture
