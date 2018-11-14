@@ -6,7 +6,6 @@ import warnings
 import six
 
 import requests
-import http
 
 
 # Technically, we should support streams that mix line endings.  This regex,
@@ -69,7 +68,7 @@ class SSEClient(object):
                     raise EOFError()
                 self.buf += decoder.decode(next_chunk)
 
-            except (StopIteration, requests.RequestException, EOFError, http.client.IncompleteRead) as e:
+            except (StopIteration, requests.RequestException, EOFError, six.moves.http_client.IncompleteRead) as e:
                 print(e)
                 time.sleep(self.retry / 1000.0)
                 self._connect()
