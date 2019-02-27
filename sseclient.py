@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+"""client library for iterating over http Server Sent Event (SSE) streams"""
+#
+# Distributed under the terms of the MIT license.
+#
+from __future__ import unicode_literals
+
 import codecs
 import re
 import time
@@ -7,6 +14,7 @@ import six
 
 import requests
 
+__version__ = '0.0.23'
 
 # Technically, we should support streams that mix line endings.  This regex,
 # however, assumes that a system will provide consistent line endings.
@@ -35,7 +43,7 @@ class SSEClient(object):
         self.requests_kwargs['headers']['Accept'] = 'text/event-stream'
 
         # Keep data here as it streams in
-        self.buf = u''
+        self.buf = ''
 
         self._connect()
 

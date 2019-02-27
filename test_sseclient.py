@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+"""Tests for sseclient package."""
+#
+# Distributed under the terms of the MIT license.
+#
+from __future__ import unicode_literals
+
 import itertools
 import io
 try:
@@ -83,12 +90,12 @@ def join_events(*events):
     Given a bunch of Event objects, dump them all to strings and join them
     together.
     """
-    return u''.join(e.dump() for e in events)
+    return ''.join(e.dump() for e in events)
 
 
 # Tests of parsing a multi event stream
 def test_last_id_remembered(monkeypatch):
-    content = u"data: message 1\nid: abcdef\n\ndata: message 2\n\n"
+    content = 'data: message 1\nid: abcdef\n\ndata: message 2\n\n'
     fake_get = mock.Mock(return_value=FakeResponse(200, content))
     monkeypatch.setattr(requests, 'get', fake_get)
 
@@ -96,13 +103,13 @@ def test_last_id_remembered(monkeypatch):
     m1 = next(c)
     m2 = next(c)
 
-    assert m1.id == u'abcdef'
+    assert m1.id == 'abcdef'
     assert m2.id is None
-    assert c.last_id == u'abcdef'
+    assert c.last_id == 'abcdef'
 
 
 def test_retry_remembered(monkeypatch):
-    content = u"data: message 1\nretry: 5000\n\ndata: message 2\n\n"
+    content = 'data: message 1\nretry: 5000\n\ndata: message 2\n\n'
     fake_get = mock.Mock(return_value=FakeResponse(200, content))
     monkeypatch.setattr(requests, 'get', fake_get)
 
@@ -120,7 +127,7 @@ def test_extra_newlines_after_event(monkeypatch):
     cause the event parser to break as it did in
     https://github.com/btubbs/sseclient/issues/5.
     """
-    content = u"""event: hello
+    content = """event: hello
 data: hello1
 
 
@@ -139,20 +146,20 @@ data: hello3
     m2 = next(c)
     m3 = next(c)
 
-    assert m1.event == u'hello'
-    assert m1.data == u'hello1'
-    assert m2.data == u'hello2'
-    assert m2.event == u'hello'
-    assert m3.data == u'hello3'
-    assert m3.event == u'hello'
+    assert m1.event == 'hello'
+    assert m1.data == 'hello1'
+    assert m2.data == 'hello2'
+    assert m2.event == 'hello'
+    assert m3.data == 'hello3'
+    assert m3.event == 'hello'
 
 
 @pytest.fixture
 def multiple_responses(monkeypatch):
     content = join_events(
-        E(data=u'message 1', id=u'first', retry=u'2000', event=u'blah'),
-        E(data=u'message 2', id=u'second', retry=u'4000', event=u'blerg'),
-        E(data=u'message 3\nhas two lines', id=u'third'),
+        E(data='message 1', id='first', retry='2000', event='blah'),
+        E(data='message 2', id='second', retry='4000', event='blerg'),
+        E(data='message 3\nhas two lines', id='third'),
     )
     fake_get = mock.Mock(return_value=FakeResponse(200, content))
     monkeypatch.setattr(requests, 'get', fake_get)
@@ -166,17 +173,17 @@ def multiple_responses(monkeypatch):
 
 
 def assert_multiple_messages(m1, m2, m3):
-    assert m1.data == u'message 1'
-    assert m1.id == u'first'
+    assert m1.data == 'message 1'
+    assert m1.id == 'first'
     assert m1.retry == 2000
-    assert m1.event == u'blah'
+    assert m1.event == 'blah'
 
-    assert m2.data == u'message 2'
-    assert m2.id == u'second'
+    assert m2.data == 'message 2'
+    assert m2.id == 'second'
     assert m2.retry == 4000
-    assert m2.event == u'blerg'
+    assert m2.event == 'blerg'
 
-    assert m3.data == u'message 3\nhas two lines'
+    assert m3.data == 'message 3\nhas two lines'
 
 
 @pytest.mark.usefixtures("multiple_responses")
