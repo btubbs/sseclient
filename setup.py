@@ -1,4 +1,10 @@
 #!/usr/bin/python
+"""Installer script sseclient package."""
+#
+# Distributed under the terms of the MIT license.
+#
+from __future__ import unicode_literals
+
 import sys
 from setuptools import setup
 
@@ -7,11 +13,11 @@ pytest_runner = ['pytest_runner>=2.1'] if needs_pytest else []
 
 setup(
     name='sseclient',
-    version='0.0.22',
+    version='0.0.23',
     author='Brent Tubbs',
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
-    install_requires=['requests>=2.0.0', 'six'],
+    install_requires=['requests>=2.9', 'six'],
     tests_require=['pytest', 'backports.unittest_mock'],
     setup_requires=[] + pytest_runner,
     description=(
