@@ -63,7 +63,8 @@ class SSEClient(object):
     def iter_content(self):
         def generate():
             while True:
-                if hasattr(self.resp.raw, '_fp'):
+                if (hasattr(self.resp.raw, '_fp') and
+                   hasattr(self.resp.raw._fp.fp, 'read1')):
                     chunk = self.resp.raw._fp.fp.read1(self.chunk_size)
                 else:
                     # _fp is not available, this means that we cannot use short
