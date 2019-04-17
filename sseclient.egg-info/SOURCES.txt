@@ -1,0 +1,12 @@
+LICENSE
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+sseclient.py
+test_sseclient.py
+sseclient.egg-info/PKG-INFO
+sseclient.egg-info/SOURCES.txt
+sseclient.egg-info/dependency_links.txt
+sseclient.egg-info/requires.txt
+sseclient.egg-info/top_level.txt
