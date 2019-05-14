@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import itertools
 import io
+import json
 try:
     from unittest import mock
 except ImportError:
@@ -215,3 +216,26 @@ def test_client_sends_cookies():
         sseclient.SSEClient('http://blah.com', session=s)
         prepared_request = m.call_args[0][0]
         assert prepared_request.headers['Cookie'] == 'foo=bar'
+
+def test_event_stream():
+    """Check whether event.data can be loaded."""
+    limit = 50
+    url = 'https://stream.wikimedia.org/v2/stream/recentchange'
+    source = sseclient.SSEClient(url)
+    for n, event in enumerate(source, start=1):
+        if event.event != 'message' or not event.data:
+            continue
+        try:
+            element = json.loads(event.data)
+        except ValueError as e:
+            source.resp.close()
+            raise e
+        if n == limit:
+            break
+    assert True
+
+if __name__ == '__main__':
+    try:
+        pytest.main()
+    except SystemExit:
+        pass
