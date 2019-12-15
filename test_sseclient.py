@@ -213,6 +213,7 @@ def test_client_sends_cookies():
     s.cookies = RequestsCookieJar()
     s.cookies['foo'] = 'bar'
     with mock.patch('sseclient.requests.Session.send') as m:
+        m.return_value.encoding = "utf-8"
         sseclient.SSEClient('http://blah.com', session=s)
         prepared_request = m.call_args[0][0]
         assert prepared_request.headers['Cookie'] == 'foo=bar'
