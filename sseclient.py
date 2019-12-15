@@ -61,22 +61,22 @@ class SSEClient(object):
         self.resp.raise_for_status()
 
     def iter_content(self):
-        def generate():
-            while True:
-                if hasattr(self.resp.raw, '_fp') and \
-                        hasattr(self.resp.raw._fp, 'fp') and \
-                        hasattr(self.resp.raw._fp.fp, 'read1'):
+        if hasattr(self.resp.raw, '_fp') and \
+                hasattr(self.resp.raw._fp, 'fp') and \
+                hasattr(self.resp.raw._fp.fp, 'read1') and \
+                not self.resp.raw.chunked and \
+                not self.resp.raw.getheader("Content-Encoding"):
+            def generate():
+                while True:
                     chunk = self.resp.raw._fp.fp.read1(self.chunk_size)
-                else:
-                    # _fp is not available, this means that we cannot use short
-                    # reads and this will block until the full chunk size is
-                    # actually read
-                    chunk = self.resp.raw.read(self.chunk_size)
-                if not chunk:
-                    break
-                yield chunk
-
-        return generate()
+                    if not chunk:
+                        break
+                    yield chunk
+            return generate()
+        else:
+            # short reads cannot be used, this will block until
+            # the full chunk size is actually read
+            return self.resp.iter_content(self.chunk_size)
 
     def _event_complete(self):
         return re.search(end_of_field, self.buf) is not None
