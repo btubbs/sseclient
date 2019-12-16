@@ -221,9 +221,9 @@ def test_client_sends_cookies():
 @pytest.fixture
 def unicode_multibyte_responses(monkeypatch):
     content = join_events(
-        E(data=u'ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö', id=u'first', retry=u'2000', event=u'blah'),
-        E(data=u'äääääääääääääääääääääääääääääääääääääääääääääääääääääääää', id=u'second', retry=u'4000', event=u'blerg'),
-        E(data=u'üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü', id=u'third'),
+        E(data='ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö', id='first', retry='2000', event='blah'),
+        E(data='äääääääääääääääääääääääääääääääääääääääääääääääääääääääää', id='second', retry='4000', event='blerg'),
+        E(data='üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü', id='third'),
     )
     fake_get = mock.Mock(return_value=FakeResponse(200, content))
     monkeypatch.setattr(requests, 'get', fake_get)
@@ -238,9 +238,9 @@ def unicode_multibyte_responses(monkeypatch):
 @pytest.mark.usefixtures("unicode_multibyte_responses")
 def test_multiple_messages():
     c = sseclient.SSEClient('http://blah.com',chunk_size=51)
-    assert next(c).data == u'ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö'
-    assert next(c).data == u'äääääääääääääääääääääääääääääääääääääääääääääääääääääääää'
-    assert next(c).data == u'üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü'
+    assert next(c).data == 'ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö'
+    assert next(c).data == 'äääääääääääääääääääääääääääääääääääääääääääääääääääääääää'
+    assert next(c).data == 'üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü'
 
 def test_event_stream():
     """Check whether event.data can be loaded."""
