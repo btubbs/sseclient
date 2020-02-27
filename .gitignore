@@ -1,0 +1,9 @@
+*.bak
+*.pyc
+*.pyo
+*.*~
+*pycache*
+/.pytest_cache/
+sseclient.egg-info/
+build
+dist
