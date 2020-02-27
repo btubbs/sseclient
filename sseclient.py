@@ -55,6 +55,8 @@ class SSEClient(object):
         requester = self.session or requests
         self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
         self.resp_iterator = self.iter_content()
+        self.decoder = codecs.getincrementaldecoder(
+            self.resp.encoding)(errors='replace')
 
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
         # attribute on Events like the Javascript spec requires.
@@ -85,14 +87,12 @@ class SSEClient(object):
         return self
 
     def __next__(self):
-        decoder = codecs.getincrementaldecoder(
-            self.resp.encoding)(errors='replace')
         while not self._event_complete():
             try:
                 next_chunk = next(self.resp_iterator)
                 if not next_chunk:
                     raise EOFError()
-                self.buf += decoder.decode(next_chunk)
+                self.buf += self.decoder.decode(next_chunk)
 
             except (StopIteration, requests.RequestException, EOFError, six.moves.http_client.IncompleteRead) as e:
                 print(e)
