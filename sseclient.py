@@ -14,7 +14,7 @@ import six
 
 import requests
 
-__version__ = '0.0.24'
+__version__ = '0.0.25'
 
 # Technically, we should support streams that mix line endings.  This regex,
 # however, assumes that a system will provide consistent line endings.
