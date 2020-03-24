@@ -178,12 +178,10 @@ class Event(object):
                     msg.data = '%s\n%s' % (msg.data, value)
                 else:
                     msg.data = value
-            elif name == 'event':
-                msg.event = value
-            elif name == 'id':
-                msg.id = value
             elif name == 'retry':
                 msg.retry = int(value)
+            else:
+                setattr(msg,name,value)
 
         return msg
 
