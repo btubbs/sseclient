@@ -74,7 +74,7 @@ Additional Resources
 - `HTML5Rocks Tutorial`_
 - `Official SSE Spec`_
 
-.. _Requests: http://docs.python-requests.org/en/latest/
+.. _Requests: https://requests.readthedocs.io/
 .. _HTML5Rocks Tutorial: https://www.html5rocks.com/en/tutorials/eventsource/basics/
 .. _Official SSE Spec: https://html.spec.whatwg.org/multipage/comms.html#server-sent-events
 
