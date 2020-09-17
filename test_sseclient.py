@@ -73,9 +73,10 @@ def test_eols():
 
 
 class FakeResponse(object):
-    def __init__(self, status_code, content, headers=None):
+    def __init__(self, status_code, content, headers=None, encoding="utf-8"):
         self.status_code = status_code
-        self.encoding = "utf-8"
+        self.encoding = encoding
+        self.apparent_encoding = "utf-8"
         if not isinstance(content, six.text_type):
             content = content.decode("utf-8")
         self.stream = content
@@ -95,9 +96,10 @@ def join_events(*events):
 
 
 # Tests of parsing a multi event stream
-def test_last_id_remembered(monkeypatch):
+@pytest.mark.parametrize("encoding", ["utf-8", None])
+def test_last_id_remembered(monkeypatch, encoding):
     content = 'data: message 1\nid: abcdef\n\ndata: message 2\n\n'
-    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    fake_get = mock.Mock(return_value=FakeResponse(200, content, encoding=encoding))
     monkeypatch.setattr(requests, 'get', fake_get)
 
     c = sseclient.SSEClient('http://blah.com')
