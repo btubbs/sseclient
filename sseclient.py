@@ -14,7 +14,7 @@ import six
 
 import requests
 
-__version__ = '0.0.26'
+__version__ = '0.0.27'
 
 # Technically, we should support streams that mix line endings.  This regex,
 # however, assumes that a system will provide consistent line endings.
@@ -55,8 +55,8 @@ class SSEClient(object):
         requester = self.session or requests
         self.resp = requester.get(self.url, stream=True, **self.requests_kwargs)
         self.resp_iterator = self.iter_content()
-        self.decoder = codecs.getincrementaldecoder(
-            self.resp.encoding)(errors='replace')
+        encoding = self.resp.encoding or self.resp.apparent_encoding
+        self.decoder = codecs.getincrementaldecoder(encoding)(errors='replace')
 
         # TODO: Ensure we're handling redirects.  Might also stick the 'origin'
         # attribute on Events like the Javascript spec requires.
