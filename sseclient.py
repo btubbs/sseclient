@@ -8,11 +8,11 @@ from __future__ import unicode_literals
 import codecs
 import re
 import time
+import urllib3
 import warnings
 
-import six
-
 import requests
+import six
 
 __version__ = '0.0.27'
 
@@ -94,7 +94,13 @@ class SSEClient(object):
                     raise EOFError()
                 self.buf += self.decoder.decode(next_chunk)
 
-            except (StopIteration, requests.RequestException, EOFError, six.moves.http_client.IncompleteRead) as e:
+            except (
+                EOFError,
+                requests.RequestException,
+                six.moves.http_client.IncompleteRead,
+                StopIteration,
+                urllib3.exceptions.ProtocolError,
+            ) as e:
                 print(e)
                 time.sleep(self.retry / 1000.0)
                 self._connect()
