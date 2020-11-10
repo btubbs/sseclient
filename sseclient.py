@@ -67,12 +67,13 @@ class SSEClient(object):
             while True:
                 if hasattr(self.resp.raw, '_fp') and \
                         hasattr(self.resp.raw._fp, 'fp') and \
-                        hasattr(self.resp.raw._fp.fp, 'read1'):
+                        hasattr(self.resp.raw._fp.fp, 'read1') and \
+                        not self.resp.raw.chunked:
                     chunk = self.resp.raw._fp.fp.read1(self.chunk_size)
                 else:
-                    # _fp is not available, this means that we cannot use short
-                    # reads and this will block until the full chunk size is
-                    # actually read
+                    # _fp is not available or we are using chunked encoding
+                    # this means that we cannot use short reads and this will
+                    # block until the full chunk size is actually read
                     chunk = self.resp.raw.read(self.chunk_size)
                 if not chunk:
                     break
