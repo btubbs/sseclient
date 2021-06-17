@@ -7,6 +7,11 @@ streams (also known as EventSource, after the name of the Javascript interface
 inside browsers).  The SSEClient class accepts a url on init, and is then an
 iterator over messages coming from the server.
 
+Maintenance
+-----------
+
+I (btubbs) haven't been using this library in my own work for years, so I put limited time into maintaining it.  I will check in on pull requests and issues once per month.  If you are interested in providing more active support for the library, please reach out.
+
 Installation
 ------------
 
