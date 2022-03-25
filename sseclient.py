@@ -181,7 +181,10 @@ class Event(object):
             elif name == 'retry':
                 msg.retry = int(value)
             else:
-                setattr(msg,name,value)
+                try:
+                    getattr(msg,name)
+                except AttributeError:
+                    setattr(msg,name,value)
 
         return msg
 
