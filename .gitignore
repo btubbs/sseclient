@@ -7,3 +7,6 @@
 sseclient.egg-info/
 build
 dist
+# Intellij
+*.iml
+*.xml
