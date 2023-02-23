@@ -1,6 +1,4 @@
-=================
-Python SSE Client
-=================
+# Filigran Python SSE Client
 
 This is a Python client library for iterating over http Server Sent Event (SSE)
 streams (also known as EventSource, after the name of the Javascript interface
