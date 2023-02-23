@@ -4,7 +4,7 @@
 *.*~
 *pycache*
 /.pytest_cache/
-sseclient.egg-info/
+filigran_sseclient.egg-info/
 build
 dist
 # Intellij

@@ -19,8 +19,8 @@ import requests
 import six
 from requests.cookies import RequestsCookieJar
 
-import sseclient
-from sseclient import Event as E
+from filigran_sseclient import sseclient
+from filigran_sseclient.sseclient import Event as E
 
 
 # Some tests of parsing a single event string
