@@ -48,12 +48,23 @@ def test_no_space():
     m = E.parse('data:hi')
     assert m.data == 'hi'
 
+def test_with_space():
+    m = E.parse('data: hi')
+    assert m.data == 'hi'
+
+def test_with_leading_space():
+    m = E.parse('data:  hi')
+    assert m.data == ' hi'
 
 def test_comment():
     raw = ":this is a comment\ndata: this is some data"
     m = E.parse(raw)
     assert m.data == 'this is some data'
 
+def test_comment_only():
+    raw = ":this is a comment"
+    m = E.parse(raw)
+    assert m.data == ''
 
 def test_retry_is_integer():
     m = E.parse('data: hi\nretry: 4000')
@@ -123,6 +134,26 @@ def test_retry_remembered(monkeypatch):
     assert m2.retry is None
     assert c.retry == 5000
 
+def test_commentonly_ignored(monkeypatch):
+    content = ':comment\n\ndata: message after comment\n\n'
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    c = sseclient.SSEClient('http://blah.com')
+    #the comment only event should be ignored entirely and not emitted
+    m1 = next(c)
+    assert m1.data == 'message after comment'
+
+def test_retryonly_ignored(monkeypatch):
+    content = 'retry: 10000\n\ndata:  will be emitted\n\n'
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    c = sseclient.SSEClient('http://blah.com')
+    #the retry only event should be processed but not emitted
+
+    m1 = next(c)
+    assert m1.data == ' will be emitted'
 
 def test_extra_newlines_after_event(monkeypatch):
     """
@@ -151,8 +182,8 @@ data: hello3
 
     assert m1.event == 'hello'
     assert m1.data == 'hello1'
-    assert m2.data == 'hello2'
     assert m2.event == 'hello'
+    assert m2.data == 'hello2'
     assert m3.data == 'hello3'
     assert m3.event == 'hello'
 
