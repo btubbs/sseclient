@@ -17,7 +17,7 @@ setup(
     author='Brent Tubbs',
     author_email='brent.tubbs@gmail.com',
     py_modules=['sseclient'],
-    install_requires=['requests>=2.9', 'six'],
+    install_requires=['requests>=2.9'],
     tests_require=['pytest', 'backports.unittest_mock'],
     setup_requires=[] + pytest_runner,
     description=(

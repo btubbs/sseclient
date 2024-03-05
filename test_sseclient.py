@@ -15,7 +15,6 @@ except ImportError:
 
 import pytest
 import requests
-import six
 from requests.cookies import RequestsCookieJar
 
 import sseclient
@@ -88,7 +87,7 @@ class FakeResponse(object):
         self.status_code = status_code
         self.encoding = encoding
         self.apparent_encoding = "utf-8"
-        if not isinstance(content, six.text_type):
+        if not isinstance(content, str):
             content = content.decode("utf-8")
         self.stream = content
         self.headers = headers or None
