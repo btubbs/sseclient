@@ -20,6 +20,19 @@ __version__ = "1.0.0"
 # however, assumes that a system will provide consistent line endings.
 end_of_field = re.compile(r"\r\n\r\n|\r\r|\n\n")
 
+# We only supports this newlines char to split message. Formatting could be present in data.
+# b"\xc2\x85", # NEL
+# b"\xe2\x80\xa8", # LineSeparator
+# b"\xe2\x80\xa9", # ParagraphSeparator
+# b"\v", # Line Tabulation
+# b"\f", # Form Feed
+# b"\x1c", File Separator
+# b"\x1d", Group Separator
+# b"\x1e", Record Separator
+# see https://docs.python.org/3.11/library/stdtypes.html#str.splitlines
+NEWLINE_MESSAGE_CHARS = b'\r\n', b'\n', b'\r',
+DECODED_NEWLINE_MESSAGE_CHARS = [nc.decode('utf-8') for nc in NEWLINE_MESSAGE_CHARS]
+SPLIT_PATTERN = re.compile('|'.join(map(re.escape, DECODED_NEWLINE_MESSAGE_CHARS)))
 
 class SSEClient(object):
     def __init__(
@@ -164,6 +177,15 @@ class Event(object):
         lines.extend("data: %s" % d for d in self.data.split("\n"))
         return "\n".join(lines) + "\n\n"
 
+    @staticmethod
+    def splitlines(raw):
+        """
+        Yield each line from the input string, split by the precompiled newline pattern.
+        """
+        for line in SPLIT_PATTERN.split(raw):
+            if line:  # Skip any empty results
+                yield line
+
     @classmethod
     def parse(cls, raw):
         """
@@ -171,7 +193,7 @@ class Event(object):
         and return a Event object.
         """
         msg = cls()
-        for line in raw.splitlines():
+        for line in cls.splitlines(raw):
             m = cls.sse_line_pattern.match(line)
             if m is None:
                 # Malformed line.  Discard but warn.
