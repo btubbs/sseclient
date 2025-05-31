@@ -9,8 +9,7 @@ import codecs
 import re
 import time
 import warnings
-
-import six
+import http.client
 
 import requests
 
@@ -96,7 +95,7 @@ class SSEClient(object):
                         raise EOFError()
                     self.buf += self.decoder.decode(next_chunk)
 
-                except (StopIteration, requests.RequestException, EOFError, six.moves.http_client.IncompleteRead) as e:
+                except (StopIteration, requests.RequestException, EOFError, http.client.IncompleteRead) as e:
                     print(e)
                     time.sleep(self.retry / 1000.0)
                     self._connect()
@@ -130,16 +129,13 @@ class SSEClient(object):
                 return msg
        
 
-    if six.PY2:
-        next = __next__
-
 
 class Event(object):
 
     sse_line_pattern = re.compile('(?P<name>[^:]*):?( ?(?P<value>.*))?')
 
     def __init__(self, data='', event='message', id=None, retry=None):
-        assert isinstance(data, six.string_types), "Data must be text"
+        assert isinstance(data, str), "Data must be text"
         self.data = data
         self.event = event
         self.id = id
