@@ -15,7 +15,6 @@ except ImportError:
 
 import pytest
 import requests
-import six
 from requests.cookies import RequestsCookieJar
 
 import sseclient
@@ -48,12 +47,23 @@ def test_no_space():
     m = E.parse('data:hi')
     assert m.data == 'hi'
 
+def test_with_space():
+    m = E.parse('data: hi')
+    assert m.data == 'hi'
+
+def test_with_leading_space():
+    m = E.parse('data:  hi')
+    assert m.data == ' hi'
 
 def test_comment():
     raw = ":this is a comment\ndata: this is some data"
     m = E.parse(raw)
     assert m.data == 'this is some data'
 
+def test_comment_only():
+    raw = ":this is a comment"
+    m = E.parse(raw)
+    assert m.data == ''
 
 def test_retry_is_integer():
     m = E.parse('data: hi\nretry: 4000')
@@ -73,10 +83,11 @@ def test_eols():
 
 
 class FakeResponse(object):
-    def __init__(self, status_code, content, headers=None):
+    def __init__(self, status_code, content, headers=None, encoding="utf-8"):
         self.status_code = status_code
-        self.encoding = "utf-8"
-        if not isinstance(content, six.text_type):
+        self.encoding = encoding
+        self.apparent_encoding = "utf-8"
+        if not isinstance(content, str):
             content = content.decode("utf-8")
         self.stream = content
         self.headers = headers or None
@@ -95,9 +106,10 @@ def join_events(*events):
 
 
 # Tests of parsing a multi event stream
-def test_last_id_remembered(monkeypatch):
+@pytest.mark.parametrize("encoding", ["utf-8", None])
+def test_last_id_remembered(monkeypatch, encoding):
     content = 'data: message 1\nid: abcdef\n\ndata: message 2\n\n'
-    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    fake_get = mock.Mock(return_value=FakeResponse(200, content, encoding=encoding))
     monkeypatch.setattr(requests, 'get', fake_get)
 
     c = sseclient.SSEClient('http://blah.com')
@@ -121,6 +133,26 @@ def test_retry_remembered(monkeypatch):
     assert m2.retry is None
     assert c.retry == 5000
 
+def test_commentonly_ignored(monkeypatch):
+    content = ':comment\n\ndata: message after comment\n\n'
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    c = sseclient.SSEClient('http://blah.com')
+    #the comment only event should be ignored entirely and not emitted
+    m1 = next(c)
+    assert m1.data == 'message after comment'
+
+def test_retryonly_ignored(monkeypatch):
+    content = 'retry: 10000\n\ndata:  will be emitted\n\n'
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    c = sseclient.SSEClient('http://blah.com')
+    #the retry only event should be processed but not emitted
+
+    m1 = next(c)
+    assert m1.data == ' will be emitted'
 
 def test_extra_newlines_after_event(monkeypatch):
     """
@@ -149,8 +181,8 @@ data: hello3
 
     assert m1.event == 'hello'
     assert m1.data == 'hello1'
-    assert m2.data == 'hello2'
     assert m2.event == 'hello'
+    assert m2.data == 'hello2'
     assert m3.data == 'hello3'
     assert m3.event == 'hello'
 
@@ -213,9 +245,34 @@ def test_client_sends_cookies():
     s.cookies = RequestsCookieJar()
     s.cookies['foo'] = 'bar'
     with mock.patch('sseclient.requests.Session.send') as m:
+        m.return_value.encoding = "utf-8"
         sseclient.SSEClient('http://blah.com', session=s)
         prepared_request = m.call_args[0][0]
         assert prepared_request.headers['Cookie'] == 'foo=bar'
+
+@pytest.fixture
+def unicode_multibyte_responses(monkeypatch):
+    content = join_events(
+        E(data='ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö', id='first', retry='2000', event='blah'),
+        E(data='äääääääääääääääääääääääääääääääääääääääääääääääääääääääää', id='second', retry='4000', event='blerg'),
+        E(data='üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü', id='third'),
+    )
+    fake_get = mock.Mock(return_value=FakeResponse(200, content))
+    monkeypatch.setattr(requests, 'get', fake_get)
+
+    yield
+
+    fake_get.assert_called_once_with(
+        'http://blah.com',
+        headers={'Accept': 'text/event-stream', 'Cache-Control': 'no-cache'},
+        stream=True)
+
+@pytest.mark.usefixtures("unicode_multibyte_responses")
+def test_multiple_messages():
+    c = sseclient.SSEClient('http://blah.com',chunk_size=51)
+    assert next(c).data == 'ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö'
+    assert next(c).data == 'äääääääääääääääääääääääääääääääääääääääääääääääääääääääää'
+    assert next(c).data == 'üüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüüü'
 
 def test_event_stream():
     """Check whether event.data can be loaded."""
