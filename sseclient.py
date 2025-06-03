@@ -10,6 +10,7 @@ import re
 import time
 import warnings
 import http.client
+from urllib3.exceptions import ProtocolError
 
 import requests
 
@@ -94,7 +95,7 @@ class SSEClient(object):
                         raise EOFError()
                     self.buf += self.decoder.decode(next_chunk)
 
-                except (StopIteration, requests.RequestException, EOFError, http.client.IncompleteRead) as e:
+                except (StopIteration, requests.RequestException, EOFError, http.client.IncompleteRead, ProtocolError) as e:
                     print(e)
                     time.sleep(self.retry / 1000.0)
                     self._connect()
