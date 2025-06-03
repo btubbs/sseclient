@@ -6,4 +6,6 @@
 /.pytest_cache/
 sseclient.egg-info/
 build
+.idea/
+.DS_Store
 dist
