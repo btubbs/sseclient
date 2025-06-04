@@ -15,9 +15,9 @@ import requests
 
 __version__ = '0.0.27'
 
-# Technically, we should support streams that mix line endings.  This regex,
+# Technically, we should support streams that mix line endings.  This,
 # however, assumes that a system will provide consistent line endings.
-end_of_field = re.compile(r'\r\n\r\n|\r\r|\n\n')
+_DELIMS = ('\r\n\r\n', '\n\n', '\r\r')
 
 
 class SSEClient(object):
@@ -80,13 +80,31 @@ class SSEClient(object):
             return self.resp.iter_content(self.chunk_size)
 
     def _event_complete(self):
-        return re.search(end_of_field, self.buf) is not None
+        """True when buffer ends with one of the delimiters."""
+        return self.buf.endswith(_DELIMS)
+
+    def _split_first_event(self):
+        """
+        Find the earliest occurrence of any delimiter in self.buf.
+        """
+        candidates = [
+            (self.buf.find(d), d)
+            for d in _DELIMS
+            if self.buf.find(d) != -1
+        ]
+        if not candidates:
+            return None, self.buf  # shouldn't happen if _event_complete() was True
+
+        idx, delim = min(candidates, key=lambda x: x[0])
+        event = self.buf[:idx]
+        remainder = self.buf[idx + len(delim):]
+        return event, remainder
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        while True: #loop until event emitted
+        while True: # loop until at least one full event is emitted
             while not self._event_complete():
                 try:
                     next_chunk = next(self.resp_iterator)
@@ -105,10 +123,10 @@ class SSEClient(object):
                     self.buf = head + sep
                     continue
 
-            # Split the complete event (up to the end_of_field) into event_string,
+            # Split the complete event into event_string,
             # and retain anything after the current complete event in self.buf
             # for next time.
-            (event_string, self.buf) = re.split(end_of_field, self.buf, maxsplit=1)
+            event_string, self.buf = self._split_first_event()
             msg = Event.parse(event_string)
 
             # If the server requests a specific retry delay, we need to honor it.
@@ -120,18 +138,18 @@ class SSEClient(object):
             if msg.id:
                 self.last_id = msg.id
 
-            #Set the last event ID string of the event source to the value of the last event ID buffer.
-            msg.lastEventId =self.last_id
+            # Set the last event ID string of the event source to the value of the last event ID buffer.
+            msg.lastEventId = self.last_id
 
             # if data in event, emit and return
-            if msg.data !='':
+            if msg.data:
                 return msg
-       
+
 
 
 class Event(object):
 
-    sse_line_pattern = re.compile('(?P<name>[^:]*):?( ?(?P<value>.*))?')
+    sse_line_pattern = re.compile(r'(?P<name>[^:]*):?( ?(?P<value>.*))?')
 
     def __init__(self, data='', event='message', id=None, retry=None):
         assert isinstance(data, str), "Data must be text"
@@ -164,13 +182,13 @@ class Event(object):
         msg = cls()
         for line in raw.splitlines():
             m = cls.sse_line_pattern.match(line)
-            if m is None:
+            if not m:
                 # Malformed line.  Discard but warn.
                 warnings.warn('Invalid SSE line: "%s"' % line, SyntaxWarning)
                 continue
 
             name = m.group('name')
-            if name == '':
+            if not name:
                 # line began with a ":", so is a comment.  Ignore
                 continue
             value = m.group('value')
