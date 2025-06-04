@@ -267,6 +267,31 @@ def unicode_multibyte_responses(monkeypatch):
         headers={'Accept': 'text/event-stream', 'Cache-Control': 'no-cache'},
         stream=True)
 
+@pytest.mark.parametrize(
+    "full_payload",
+    [
+        '{"comment":"Line1\\n\\nLine2"}',
+        '{"comment":"Line1\\r\\rLine2"}',
+        '{"comment":"Line1\\r\\nLine2"}'
+    ],
+    ids=["double_newline", "double_cr", "crlf"]
+)
+def test_event_split_on_embedded_line_endings(monkeypatch, full_payload):
+    """
+    This makes sure that embedded double newlines don't cause the event
+    to break and be considered an unterminated string/ValueError.
+    https://github.com/btubbs/sseclient/issues/28
+    """
+    sse_stream = f"data: {full_payload}\n\n"
+    fake_get = mock.Mock(return_value=FakeResponse(200, sse_stream))
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    client = sseclient.SSEClient("http://blah.com")
+    event = next(client)
+
+    assert event.data == full_payload
+    json.loads(event.data)
+
 @pytest.mark.usefixtures("unicode_multibyte_responses")
 def test_multiple_messages():
     c = sseclient.SSEClient('http://blah.com',chunk_size=51)
